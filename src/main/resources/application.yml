@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: lexflow
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lexflow
+    username: lexflow
+    password: ${DB_PASSWORD:lexflow_dev}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate.default_schema: public
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/public
+
+  thymeleaf:
+    cache: false
+
+  mail:
+    host: localhost
+    port: 1025
+    username: ''
+    password: ''
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD:redis_dev}
+
+server:
+  port: 8080
+  error:
+    include-message: always
+
+lexflow:
+  jwt:
+    secret: ${JWT_SECRET:lexflow-dev-secret-key-muito-longa-32-chars}
+    expiration: 900000
+    refresh-expiration: 604800000
+  minio:
+    endpoint: http://localhost:9000
+    access-key: ${MINIO_ACCESS:minioadmin}
+    secret-key: ${MINIO_SECRET:minioadmin}
+    bucket: lexflow-documents
+  meilisearch:
+    host: http://localhost:7700
+    api-key: ${MEILI_KEY:meili_dev}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
