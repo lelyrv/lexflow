@@ -1,16 +1,99 @@
+
 services:
+
+  # ── PostgreSQL 16 ──────────────────────────
   postgres:
-    image: postgres:15
+    image: postgres:16-alpine
     container_name: lexflow-postgres
-    restart: always
     environment:
       POSTGRES_DB: lexflow
       POSTGRES_USER: lexflow
       POSTGRES_PASSWORD: lexflow_dev
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U lexflow']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis 7 ────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: lexflow-redis
+    command: redis-server --requirepass redis_dev
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+  # ── RabbitMQ 3.13 ──────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: lexflow-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: lexflow
+      RABBITMQ_DEFAULT_PASS: rabbit_dev
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # ── MinIO (Storage S3) ──────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: lexflow-minio
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+
+  # ── Meilisearch (Busca) ─────────────────────
+  meilisearch:
+    image: getmeili/meilisearch:v1.9
+    container_name: lexflow-meili
+    environment:
+      MEILI_MASTER_KEY: meili_dev
+      MEILI_ENV: development
+    ports:
+      - '7700:7700'
+    volumes:
+      - meili_data:/meili_data
+
+  # ── Mailhog (E-mail dev) ────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: lexflow-mailhog
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+
+  # ── Ollama (IA local) ───────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: lexflow-ollama
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          memory: 6G
 
 volumes:
   postgres_data:
+  redis_data:
+  rabbitmq_data:
+  minio_data:
+  meili_data:
+  ollama_data:
